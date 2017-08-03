@@ -9,22 +9,24 @@ var Redis = require('ioredis');
 var Memcached = require('memcached');
 var redis = new Redis(config.get('room.redis'));
 var memcached = new Memcached(config.get('room.memcached'));
+var Anison = require('./anison.js');
+var logger = Anison.Logger(TAG, Anison.LEVEL_INFO);
 
 app.get('/', function(req, res){
 	var userId = req.query.id;
 	var userStatusKey = getUserStatusKey(userId);
-	log('userId='+userId);
+	logger.info('userId='+userId);
 	memcached.get(userStatusKey, function(err, data) {
 		if(data){
-			log('isPlaying');
+			logger.error('isPlaying');
 			res.send(data);
 		} else {
-			log('isNotPlaying');
+			logger.debug('isNotPlaying');
 			redis.lpop(KEY_WAITING, function(err, waitingUserId) {
-				log('waitingUserId='+waitingUserId);
+				logger.debug('waitingUserId='+waitingUserId);
 				if(!waitingUserId || waitingUserId === userId) {
 					redis.lpush(KEY_WAITING, userId, function(err, result) {
-						log('status=waiting');
+						logger.debug('status=waiting');
 						res.send('{"status":"waiting"}');
 					});
 				} else {
@@ -35,7 +37,7 @@ app.get('/', function(req, res){
 						} else if(data[waitingUserStatusKey]) {
 							res.send('{"status":"waiting"}');
 						} else {
-							log('make room');
+							logger.debug('make room');
 							var roomId = getRoomId(waitingUserId, userId);
 							// cache room info
 							var roomInfo = {"users":[waitingUserId, userId], "created":Date.now()};
@@ -54,16 +56,12 @@ app.get('/', function(req, res){
 });
 
 http.listen(config.get('room.port'), function(){
-	log('listening on *:'+config.get('room.port'));
+	logger.info('listening on *:'+config.get('room.port'));
 });
-
-function log(msg) {
-	console.log(TAG+'] '+msg);
-}
 
 function getRedis(callback) {
 	redis.get('foo', function (err, result) {
-		console.log(result);
+		logger.debug(result);
 		callback(null,result);
 	});
 }
@@ -73,5 +71,5 @@ function getUserStatusKey(userId) {
 }
 
 function getRoomId(user1, user2) {
-	return 'room:'+user1+':'+user2;
+	return 'room:'+user1+':'+user2+':'+parseInt(Date.now()/1000);
 }

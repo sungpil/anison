@@ -1,7 +1,7 @@
 {
-  "name": "socket-chat-example",
+  "name": "anison",
   "version": "0.0.1",
-  "description": "my first socket.io app",
+  "description": "socket.io for anison",
   "dependencies": {
     "config": "^1.26.1",
     "express": "^4.15.3",

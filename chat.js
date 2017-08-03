@@ -1,17 +1,21 @@
+const TAG = 'Chat';
 var cluster = require('cluster');
 var numCPUs = require('os').cpus().length;
+var Anison = require('./anison.js');
+var logger = Anison('chat', Anison.LEVEL_DEBUG);
+
 
 if(cluster.isMaster) {
 	// Fork process
-	console.log('numCPUs='+numCPUs);
+	logger.debug('numCPUs='+numCPUs);
 
 	for( var i=0; i<numCPUs; i++) {
-		console.log("fork");
+		logger.debug("fork");
 		cluster.fork();
 	}
 
 	cluster.on('exit', (worker, code, signal) => {
-		console.log(`worker ${worker.process.pid} died`);
+		logger.debug(`worker ${worker.process.pid} died`);
 	});
 } else {
 	// app logic
@@ -26,17 +30,16 @@ if(cluster.isMaster) {
 	});
 
 	io.on('connection', function(socket){
-		var room = "room"+socket.handshake.query.room;
-		console.log("connected");
-		console.log(room);
-		socket.join(room);
-		socket.on('chat message', function(msg){
-			console.log(room+'- message: ' + msg);
-			io.to(room).emit('chat message', msg);
+		var roomId = socket.handshake.query.roomId;
+		logger.debug("connected roomId="+roomId);
+		socket.join(roomId);
+		socket.on('message', function(msg){
+			logger.debug(roomId+'- message: ' + msg);
+			io.to(roomId).emit('chat message', msg);
 		});
 	});
 
 	http.listen(3000, function(){
-		console.log('listening on *:3000');
+		logger.debug('listening on *:3000');
 	});
 }
