@@ -2,7 +2,7 @@ const TAG = 'Chat';
 var cluster = require('cluster');
 var numCPUs = require('os').cpus().length;
 var Anison = require('./anison.js');
-var logger = Anison('chat', Anison.LEVEL_DEBUG);
+var logger = Anison(TAG, Anison.LEVEL_DEBUG);
 
 
 if(cluster.isMaster) {
@@ -27,8 +27,8 @@ if(cluster.isMaster) {
 	
 	io.on('connection', function(socket){
 		var roomId = socket.handshake.query.roomId;
-		logger.debug("connected roomId="+roomId);
 		socket.join(roomId);
+		logger.debug("connected roomId="+roomId);
 		socket.on('message', function(msg){
 			logger.debug(roomId+'- message: ' + msg);
 			io.to(roomId).emit('message', msg);
